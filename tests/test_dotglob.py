@@ -31,23 +31,25 @@ def dirtree(tmp_path):
     return dir1
 
 
-def test_patterns_no_globfiles(dirtree):
-    patterns_found = list(globber.patterns(dirtree, cfg=globber.Config()))
-    assert len(patterns_found) == 0
+def test_expressions_no_globfiles(dirtree):
+    expressions_found = list(globber.expressions(dirtree, cfg=globber.Config()))
+    assert len(expressions_found) == 0
 
 
-def test_patterns_single_globfile(dirtree):
+def test_expressions_single_globfile(dirtree):
     cfg = globber.Config()
     (dirtree / cfg.globfile).write_text(
         """
         *.py
         *.txt """
     )
-    patterns_found = list(globber.patterns(dirtree, cfg=cfg))
-    assert patterns_found == ["*.py", "*.txt"]
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    assert len(expressions_found) == 2 
+    assert expressions_found[0].endswith('dir1/*.py')
+    assert expressions_found[1].endswith('dir1/*.txt')
 
 
-def test_patterns_multi_globfiles(dirtree):
+def test_expressions_multi_globfiles(dirtree):
     cfg = globber.Config()
     (dirtree / cfg.globfile).write_text(
         """
@@ -55,5 +57,21 @@ def test_patterns_multi_globfiles(dirtree):
         *.txt """
     )
     (dirtree / "dir2" / cfg.globfile).write_text("-*.py")
-    patterns_found = list(globber.patterns(dirtree, cfg=cfg))
-    assert len(patterns_found) == 3
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    assert len(expressions_found) == 3
+
+def test_expressions_relativized(dirtree):
+    cfg = globber.Config()
+    (dirtree / cfg.globfile).write_text(
+        """
+        **.py
+        *.txt """
+    )
+    (dirtree / "dir2" / cfg.globfile).write_text("-*.md")
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    assert len(expressions_found) == 3
+    assert expressions_found[0].endswith('dir1/**.py')
+    assert expressions_found[1].endswith('dir1/*.txt')
+    assert expressions_found[2].startswith('-')
+    assert expressions_found[2].endswith('dir1/dir2/*.md')
+
