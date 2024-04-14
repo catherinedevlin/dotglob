@@ -1,2 +1,5 @@
 # dotglob
-Interprets glob directions saved in files anywhere in a directory tree
+
+Designate files with glob patterns stored in files.
+
+* License: MIT
