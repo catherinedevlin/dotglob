@@ -100,6 +100,14 @@ def test_glob_all(dirtree):
     assert len(paths) == 13
 
 
+def test_glob_all_implied(dirtree):
+    cfg = globber.Config()
+    (dirtree / cfg.globfile).touch()
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    paths = globber.paths(expressions_found)
+    assert len(paths) == 13
+
+
 def test_omit_dir2(dirtree):
     cfg = globber.Config()
     (dirtree / cfg.globfile).write_text("** -dir2/**")
@@ -108,3 +116,44 @@ def test_omit_dir2(dirtree):
     assert len(paths) == 6
     for path in paths:
         assert "dir2/" not in path
+
+
+def test_omit_dir2_abbrev(dirtree):
+    cfg = globber.Config()
+    (dirtree / cfg.globfile).touch()
+    (dirtree / "dir2" / cfg.globfile).write_text("-.py")
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    paths = globber.paths(expressions_found)
+    for path in paths:
+        assert "dir2/mod1.py" not in path
+
+
+def test_omit_extension(dirtree):
+    cfg = globber.Config()
+    (dirtree / cfg.globfile).touch()
+    (dirtree / "dir2" / cfg.globfile).write_text("-.py")
+    expressions_found = list(globber.expressions(dirtree, cfg=cfg))
+    paths = globber.paths(expressions_found)
+    for path in paths:
+        if "dir2" in path:
+            assert ".py" not in path
+
+
+def test_unabbreviate_unaltered():
+    assert globber.unabbreviated("**/*.py") == "**/*.py"
+
+
+def test_unabbreviate_negative_unaltered():
+    assert globber.unabbreviated("-**/*.py") == "-**/*.py"
+
+
+def test_unabbreviate_ext():
+    assert globber.unabbreviated(".py") == "**/*.py"
+
+
+def test_unabbreviate_negative_ext():
+    assert globber.unabbreviated("-.py") == "-**/*.py"
+
+
+def test_unabbreviate_negative_empty():
+    assert globber.unabbreviated("-") == "-**"
